@@ -1,12 +1,14 @@
 ########################################
 
-set(EXECUTABLE "DemoApp")
+set(EXECUTABLE "cinpact")
 
 set(EXECUTABLE_RESOURCES)
 
 list(
     APPEND EXECUTABLE_RESOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/DemoAppMain.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CinpactMain.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CinpactApp.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CinpactApp.hpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

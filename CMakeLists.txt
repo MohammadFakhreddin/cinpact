@@ -125,8 +125,8 @@ link_libraries(RenderSystem)
 
 ### Executables
 
-### DemoApp ##############################################
+### CinpactApp ############################################
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/executables/demoapp")
+add_subdirectory("${CMAKE_SOURCE_DIR}/executables/cinpact_app")
 
 ###########################################################
