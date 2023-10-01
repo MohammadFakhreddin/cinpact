@@ -9,6 +9,8 @@ list(
     "${CMAKE_CURRENT_SOURCE_DIR}/CinpactMain.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/CinpactApp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/CinpactApp.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CinpactCurve.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CinpactCurve.hpp"
 )
 
 add_executable(${EXECUTABLE} ${EXECUTABLE_RESOURCES})

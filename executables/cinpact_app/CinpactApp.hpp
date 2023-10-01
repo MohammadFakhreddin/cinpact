@@ -12,6 +12,8 @@
 #include "render_resource/DepthRenderResource.hpp"
 #include "render_resource/MSAA_RenderResource.hpp"
 #include "render_resource/SwapChainRenderResource.hpp"
+#include "utils/LineRenderer.hpp"
+#include "utils/PointRenderer.hpp"
 
 class CinpactApp
 {
@@ -25,8 +27,35 @@ public:
 
 private:
 
+	struct ControlPoint
+	{
+		int idx = 0;
+		std::string name{};
+		glm::dvec3 position{};
+		bool autoAssignC = false;
+		float k{};
+		float c{};
+	};
+
+	enum class Mode
+	{
+		Add,
+		Move,
+		Edit,
+		Remove
+	};
+
+	void Update();
+
+	void Render(MFA::RT::CommandRecordState & recordState);
+
 	void OnUI();
 
+	void OnSDL_Event(SDL_Event* event);
+
+	ControlPoint * GetClickedControlPoint(glm::vec2 const & mousePos);
+
+	// Render parameters
 	std::shared_ptr<MFA::Path> path{};
 	std::shared_ptr<MFA::LogicalDevice> device{};
 	std::shared_ptr<MFA::UI> ui{};
@@ -36,12 +65,25 @@ private:
 	std::shared_ptr<MFA::DisplayRenderPass> displayRenderPass{};
 
 	std::shared_ptr<MFA::RT::BufferGroup> cameraBuffer{};
-	std::shared_ptr<MFA::PerspectiveCamera> camera{};
 	std::shared_ptr<MFA::HostVisibleBufferTracker<glm::mat4>> cameraBufferTracker{};
 
 	std::shared_ptr<MFA::LinePipeline> linePipeline{};
-	std::shared_ptr<MFA::PointPipeline> pointPipeline{};
+	std::shared_ptr<MFA::LineRenderer> lineRenderer{};
 
-	std::shared_ptr<MFA::RT::BufferAndMemory> vertexBuffer{};
+	std::shared_ptr<MFA::PointPipeline> pointPipeline{};
+	std::shared_ptr<MFA::PointRenderer> pointRenderer{};
+
+	std::vector<ControlPoint> cps{};		// Control points
+
+	ControlPoint* selectedCP{};
+	
+	glm::vec4 cpColor{ 1.0, 0.0, 0.0, 1.0 };
+	float defaultK = 2.0f;
+
+	Mode mode = Mode::Add;
+	bool leftMouseDown = false;
+	bool rightMouseDown = false;
+
+	int nextCpIdx = 0;
 
 };
