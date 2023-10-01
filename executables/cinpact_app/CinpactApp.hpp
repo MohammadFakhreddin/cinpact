@@ -4,6 +4,7 @@
 #include "BedrockPath.hpp"
 #include "BufferTracker.hpp"
 #include "LogicalDevice.hpp"
+#include "UI.hpp"
 #include "camera/PerspectiveCamera.hpp"
 #include "pipeline/LinePipeline.hpp"
 #include "pipeline/PointPipeline.hpp"
@@ -24,8 +25,11 @@ public:
 
 private:
 
+	void OnUI();
+
 	std::shared_ptr<MFA::Path> path{};
 	std::shared_ptr<MFA::LogicalDevice> device{};
+	std::shared_ptr<MFA::UI> ui{};
 	std::shared_ptr<MFA::SwapChainRenderResource> swapChainResource{};
 	std::shared_ptr<MFA::DepthRenderResource> depthResource{};
 	std::shared_ptr<MFA::MSSAA_RenderResource> msaaResource{};

@@ -4,8 +4,6 @@
 #include "BufferTracker.hpp"
 #include "CinpactApp.hpp"
 
-#include <glm/glm.hpp>
-
 int main()
 {
     {

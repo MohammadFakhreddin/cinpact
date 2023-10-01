@@ -22,6 +22,7 @@ CinpactApp::CinpactApp()
     device = LogicalDevice::Instantiate(params);
     assert(device->IsValid() == true);
 
+    
     swapChainResource = std::make_shared<SwapChainRenderResource>();
     depthResource = std::make_shared<DepthRenderResource>();
     msaaResource = std::make_shared<MSSAA_RenderResource>();
@@ -30,6 +31,9 @@ CinpactApp::CinpactApp()
         depthResource,
         msaaResource
     );
+
+    ui = std::make_shared<UI>(displayRenderPass);
+    ui->UpdateSignal.Register([this]()->void{ OnUI(); });
 
     cameraBuffer = RB::CreateHostVisibleUniformBuffer(
         device->GetVkDevice(),
@@ -56,8 +60,8 @@ void CinpactApp::Run()
 {
     SDL_GL_SetSwapInterval(0);
     SDL_Event e;
-    uint32_t deltaTimeMs = 0;
-    float deltaTimeSec = 0.0f;
+    uint32_t deltaTimeMs = 1000.0f / 30.0f;
+    float deltaTimeSec = static_cast<float>(deltaTimeMs) / 1000.0f;
     uint32_t startTime = SDL_GetTicks();
 
     bool shouldQuit = false;
@@ -76,6 +80,8 @@ void CinpactApp::Run()
 
         device->Update();
 
+        ui->Update();
+
         auto recordState = device->AcquireRecordState(swapChainResource->GetSwapChainImages().swapChain);
         if (recordState.isValid == true)
         {
@@ -83,10 +89,11 @@ void CinpactApp::Run()
                 recordState,
                 RT::CommandBufferType::Graphic
             );
-
             cameraBufferTracker->Update(recordState);
 
             displayRenderPass->Begin(recordState);
+
+        	ui->Render(recordState, deltaTimeSec);
 
             displayRenderPass->End(recordState);
 
@@ -97,7 +104,7 @@ void CinpactApp::Run()
             device->Present(recordState, swapChainResource->GetSwapChainImages().swapChain);
         }
 
-        deltaTimeMs = SDL_GetTicks() - startTime;
+        deltaTimeMs = std::max<int>(SDL_GetTicks() - startTime, static_cast<int>(1000.0f / 120.0f));
         startTime = SDL_GetTicks();
         deltaTimeSec = static_cast<float>(deltaTimeMs) / 1000.0f;
     }
@@ -114,12 +121,22 @@ CinpactApp::~CinpactApp()
     cameraBufferTracker.reset();
 	cameraBuffer.reset();
     camera.reset();
+    ui.reset();
     displayRenderPass.reset();
     swapChainResource.reset();
     depthResource.reset();
     msaaResource.reset();
     device.reset();
     path.reset();
+}
+
+//-----------------------------------------------------
+
+void CinpactApp::OnUI()
+{
+    ui->BeginWindow("Settings");
+    ImGui::Text("placeholder");
+	ui->EndWindow();
 }
 
 //-----------------------------------------------------
