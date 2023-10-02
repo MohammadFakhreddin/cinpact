@@ -55,7 +55,6 @@ CinpactApp::CinpactApp()
     linePipeline = std::make_shared<LinePipeline>(displayRenderPass, cameraBuffer, 10000);
     pointPipeline = std::make_shared<PointPipeline>(displayRenderPass, cameraBuffer, 10000);
 
-    lineRenderer = std::make_shared<LineRenderer>(linePipeline);
     pointRenderer = std::make_shared<PointRenderer>(pointPipeline);
 
     device->SDL_EventSignal.Register([&](SDL_Event* event)->void
@@ -101,7 +100,45 @@ void CinpactApp::Run()
                 recordState,
                 RT::CommandBufferType::Graphic
             );
+
             cameraBufferTracker->Update(recordState);
+
+            if (curveBufferNeedUpdate == true && curvePoints.empty() == false)
+            {
+                curveBufferNeedUpdate = false;
+
+                auto const blob = MFA::Alias{ curvePoints.data(), curvePoints.size() };
+                
+                if (curveVertices == nullptr || curveVertices->size < blob.Len())
+                {
+                    stageBuffer = RB::CreateStageBuffer(
+                        LogicalDevice::Instance->GetVkDevice(),
+                        LogicalDevice::Instance->GetPhysicalDevice(),
+                        curvePoints.size() * sizeof(curvePoints[0]),
+                        1
+                    );
+                    curveVertices = RB::CreateVertexBuffer(
+                        LogicalDevice::Instance->GetVkDevice(),
+                        LogicalDevice::Instance->GetPhysicalDevice(),
+                        recordState.commandBuffer,
+                        *stageBuffer->buffers[0],
+                        blob
+                    );
+                }
+                else
+                {
+                    RB::UpdateHostVisibleBuffer(
+                        LogicalDevice::Instance->GetVkDevice(),
+                        *stageBuffer->buffers[0],
+                        blob
+                    );
+                    RB::UpdateLocalBuffer(
+                        recordState.commandBuffer,
+                        *curveVertices,
+                        *stageBuffer->buffers[0]
+                    );
+                }
+            }
 
             displayRenderPass->Begin(recordState);
 
@@ -130,7 +167,8 @@ void CinpactApp::Run()
 
 CinpactApp::~CinpactApp()
 {
-    lineRenderer.reset();
+    stageBuffer.reset();
+    curveVertices.reset();
     pointRenderer.reset();
     linePipeline.reset();
     pointPipeline.reset();
@@ -161,6 +199,7 @@ void CinpactApp::Update()
     else if (curveChanged == true)
     {
         curveChanged = false;
+        curveBufferNeedUpdate = true;
 
         std::vector<glm::vec3> controlPoints(cps.size());
         std::vector<float> cConstants(cps.size());
@@ -197,10 +236,22 @@ void CinpactApp::Render(MFA::RT::CommandRecordState& recordState)
     }
     if (curvePoints.empty() == false)
     {
-        for (int i = 0; i < curvePoints.size() - 1; ++i)
-        {
-            lineRenderer->Draw(recordState, curvePoints[i], curvePoints[i + 1]);
-        }
+        linePipeline->BindPipeline(recordState);
+        linePipeline->SetPushConstants(
+            recordState, 
+            LinePipeline::PushConstants{
+                .model = glm::identity<glm::mat4>(),
+                .color = glm::vec4{0.0f, 1.0f, 1.0f, 1.0f}
+			}
+        );
+        RB::BindVertexBuffer(recordState, *curveVertices);
+        vkCmdDraw(
+			recordState.commandBuffer,
+            curvePoints.size(),
+            1,
+            0,
+            0
+        );
     }
 }
 
@@ -237,9 +288,19 @@ void CinpactApp::OnUI()
 
     ImGui::Spacing();
 
-    ImGui::InputFloat("Delta U", &deltaU);
+    if (ImGui::Button("Remove all control points"))
+    {
+        cps.clear();
+        curveChanged = true;
+    }
+
+    ImGui::Spacing();
+
+    //ImGui::InputFloat("Delta U", &deltaU);
 
 	ImGui::InputFloat("Default K", &defaultK);
+
+    ImGui::InputFloat("Default C", &defaultC);
 
     if (selectedCP != nullptr && ImGui::TreeNode("Selected point: %s", selectedCP->name.c_str()))
     {

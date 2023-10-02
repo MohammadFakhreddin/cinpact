@@ -69,11 +69,10 @@ private:
 	std::shared_ptr<MFA::HostVisibleBufferTracker<glm::mat4>> cameraBufferTracker{};
 
 	std::shared_ptr<MFA::LinePipeline> linePipeline{};
-	std::shared_ptr<MFA::LineRenderer> lineRenderer{};
-
+	
 	std::shared_ptr<MFA::PointPipeline> pointPipeline{};
 	std::shared_ptr<MFA::PointRenderer> pointRenderer{};
-
+	
 	std::vector<ControlPointInfo> cps{};		// Control points
 
 	ControlPointInfo* selectedCP{};
@@ -83,8 +82,8 @@ private:
 	const glm::vec4 SelectedCP_Color{ 0.0, 1.0, 0.0, 1.0 };
 
 	float deltaU = 1e-4f;
-	float defaultK = 1.0f;
-	float defaultC = 1.0f;
+	float defaultK = 10.0f;
+	float defaultC = 10.0f;
 
 	Mode mode = Mode::Add;
 	bool leftMouseDown = false;
@@ -94,5 +93,8 @@ private:
 
 	bool curveChanged = false;
 	std::vector<glm::vec3> curvePoints{};
-
+	bool curveBufferNeedUpdate = false;
+	std::shared_ptr<MFA::RT::BufferAndMemory> curveVertices{};
+	std::shared_ptr<MFA::RT::BufferGroup> stageBuffer{};
+	
 };

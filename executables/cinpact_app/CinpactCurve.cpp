@@ -11,7 +11,7 @@ std::vector<glm::vec3> Cinpact::Generate(std::vector<glm::vec3> const& controlPo
 {
 	std::vector<glm::vec3> result{};
 
-	for (float u = 0.0f; u <= 1.0f; u += deltaU)
+	for (float u = deltaU; u <= static_cast<float>(controlPoints.size()) - 1.0 - deltaU; u += deltaU)
 	{
 		std::vector<float> weights(controlPoints.size());
 		float weightSum = 0.0f;

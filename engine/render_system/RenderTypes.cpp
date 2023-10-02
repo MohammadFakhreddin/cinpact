@@ -213,6 +213,7 @@ namespace MFA::RenderTypes
 
 	BufferAndMemory::~BufferAndMemory()
 	{
+		vkDeviceWaitIdle(LogicalDevice::Instance->GetVkDevice());
 		RB::DestroyBuffer(LogicalDevice::Instance->GetVkDevice(), *this);
 	}
 
