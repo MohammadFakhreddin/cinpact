@@ -1,5 +1,7 @@
 #include "CinpactApp.hpp"
 
+#include "CinpactCurve.hpp"
+
 using namespace MFA;
 
 static constexpr float DefaultZ = 0.5f;
@@ -154,6 +156,23 @@ void CinpactApp::Update()
         auto const screen = device->GetSurfaceCapabilities().currentExtent;
         auto const mousePos = Math::ScreenSpaceToProjectedSpace({ mx, my }, screen.width, screen.height);
         selectedCP->position = glm::vec3{ mousePos, DefaultZ };
+        curveChanged = true;
+    }
+    else if (curveChanged == true)
+    {
+        curveChanged = false;
+
+        std::vector<glm::vec3> controlPoints(cps.size());
+        std::vector<float> cConstants(cps.size());
+        std::vector<float> kConstants(cps.size());
+    	for (int i = 0; i < static_cast<int>(cps.size()); ++i)
+    	{
+            controlPoints[i] = cps[i].position;
+            kConstants[i] = cps[i].k;
+            cConstants[i] = cps[i].c;
+    	}
+
+        curvePoints = Cinpact::Generate(controlPoints, cConstants, kConstants, deltaU);
     }
 }
 
@@ -165,11 +184,22 @@ void CinpactApp::Render(MFA::RT::CommandRecordState& recordState)
     {
         if (selectedCP != nullptr && selectedCP->idx == cp.idx)
         {
-            pointRenderer->Draw(recordState, selectedCP->position, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+            pointRenderer->Draw(recordState, selectedCP->position, SelectedCP_Color);
+        }
+        else if (cp.isOpenInTree == true)
+        {
+            pointRenderer->Draw(recordState, cp.position, ActiveTreeCP_Color);
         }
         else
         {
-            pointRenderer->Draw(recordState, cp.position, cpColor);
+            pointRenderer->Draw(recordState, cp.position, DefaultCP_Color);
+        }
+    }
+    if (curvePoints.empty() == false)
+    {
+        for (int i = 0; i < curvePoints.size() - 1; ++i)
+        {
+            lineRenderer->Draw(recordState, curvePoints[i], curvePoints[i + 1]);
         }
     }
 }
@@ -207,16 +237,14 @@ void CinpactApp::OnUI()
 
     ImGui::Spacing();
 
+    ImGui::InputFloat("Delta U", &deltaU);
+
 	ImGui::InputFloat("Default K", &defaultK);
 
     if (selectedCP != nullptr && ImGui::TreeNode("Selected point: %s", selectedCP->name.c_str()))
     {
-        ImGui::InputFloat("K", &selectedCP->k);
-        ImGui::Checkbox("Auto assign C", &selectedCP->autoAssignC);
-    	if (selectedCP->autoAssignC == false)
-        {
-            ImGui::InputFloat("C", &selectedCP->c);
-        }
+        curveChanged |= ImGui::InputFloat("K", &selectedCP->k);
+        curveChanged |= ImGui::InputFloat("C", &selectedCP->c);
         ImGui::TreePop();
     }
     if (ImGui::TreeNode("All points"))
@@ -225,13 +253,14 @@ void CinpactApp::OnUI()
         {
 	        if (ImGui::TreeNode(cp.name.c_str()))
 	        {
-                ImGui::InputFloat("K", &cp.k);
-                ImGui::Checkbox("Auto assign C", &cp.autoAssignC);
-                if (cp.autoAssignC == false)
-                {
-                    ImGui::InputFloat("C", &cp.c);
-                }
+                curveChanged |= ImGui::InputFloat("K", &cp.k);
+                curveChanged |= ImGui::InputFloat("C", &cp.c);
                 ImGui::TreePop();
+                cp.isOpenInTree = true;
+	        }
+	        else
+	        {
+                cp.isOpenInTree = false;
 	        }
         }
         ImGui::TreePop();
@@ -270,11 +299,12 @@ void CinpactApp::OnSDL_Event(SDL_Event* event)
 	                {
 	                    auto& newControlPoint = cps.emplace_back();
                         newControlPoint.idx = nextCpIdx++;
-	                    newControlPoint.name = "Point" + std::to_string(cps.size());
+	                    newControlPoint.name = "Point" + std::to_string(newControlPoint.idx);
 	                    newControlPoint.position = glm::vec3{ mousePos, DefaultZ };
-	                    newControlPoint.autoAssignC = true;
+                        newControlPoint.c = defaultC;
 	                    newControlPoint.k = defaultK;
 	                    selectedCP = &newControlPoint;
+                        curveChanged = true;
 	                }
 	            }
 	            break;
@@ -295,6 +325,7 @@ void CinpactApp::OnSDL_Event(SDL_Event* event)
                             }
                         }
                         selectedCP = nullptr;
+                        curveChanged = true;
                     }
 	            }
 	            break;
@@ -323,9 +354,9 @@ void CinpactApp::OnSDL_Event(SDL_Event* event)
 
 //-----------------------------------------------------
 
-CinpactApp::ControlPoint* CinpactApp::GetClickedControlPoint(glm::vec2 const& mousePos)
+CinpactApp::ControlPointInfo* CinpactApp::GetClickedControlPoint(glm::vec2 const& mousePos)
 {
-    ControlPoint* selectedControlPoint = nullptr;
+    ControlPointInfo* selectedControlPoint = nullptr;
     float selectedDistance = 0.0f;
     for (auto& cp : cps)
     {

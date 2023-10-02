@@ -27,14 +27,15 @@ public:
 
 private:
 
-	struct ControlPoint
+	struct ControlPointInfo
 	{
 		int idx = 0;
 		std::string name{};
 		glm::dvec3 position{};
-		bool autoAssignC = false;
 		float k{};
 		float c{};
+
+		bool isOpenInTree = false;
 	};
 
 	enum class Mode
@@ -53,7 +54,7 @@ private:
 
 	void OnSDL_Event(SDL_Event* event);
 
-	ControlPoint * GetClickedControlPoint(glm::vec2 const & mousePos);
+	ControlPointInfo * GetClickedControlPoint(glm::vec2 const & mousePos);
 
 	// Render parameters
 	std::shared_ptr<MFA::Path> path{};
@@ -73,17 +74,25 @@ private:
 	std::shared_ptr<MFA::PointPipeline> pointPipeline{};
 	std::shared_ptr<MFA::PointRenderer> pointRenderer{};
 
-	std::vector<ControlPoint> cps{};		// Control points
+	std::vector<ControlPointInfo> cps{};		// Control points
 
-	ControlPoint* selectedCP{};
+	ControlPointInfo* selectedCP{};
 	
-	glm::vec4 cpColor{ 1.0, 0.0, 0.0, 1.0 };
-	float defaultK = 2.0f;
+	const glm::vec4 DefaultCP_Color{ 1.0, 0.0, 0.0, 1.0 };
+	const glm::vec4 ActiveTreeCP_Color{ 1.0, 1.0, 0.0, 1.0 };
+	const glm::vec4 SelectedCP_Color{ 0.0, 1.0, 0.0, 1.0 };
+
+	float deltaU = 1e-4f;
+	float defaultK = 1.0f;
+	float defaultC = 1.0f;
 
 	Mode mode = Mode::Add;
 	bool leftMouseDown = false;
 	bool rightMouseDown = false;
 
 	int nextCpIdx = 0;
+
+	bool curveChanged = false;
+	std::vector<glm::vec3> curvePoints{};
 
 };
