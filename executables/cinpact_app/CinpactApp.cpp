@@ -211,7 +211,7 @@ void CinpactApp::Update()
             cConstants[i] = cps[i].c;
     	}
 
-        curvePoints = Cinpact::Generate(controlPoints, cConstants, kConstants, deltaU);
+        curvePoints = Cinpact::Generate(interpolate, controlPoints, cConstants, kConstants, deltaU);
     }
 }
 
@@ -262,6 +262,11 @@ void CinpactApp::OnUI()
     ui->BeginWindow("Settings");
 
     ImGui::Text("Operations");
+
+    if (ImGui::Checkbox("Interpolate", &interpolate))
+    {
+        curveChanged = true;
+    }
 
     if (ImGui::RadioButton("Add", mode == Mode::Add))
     {

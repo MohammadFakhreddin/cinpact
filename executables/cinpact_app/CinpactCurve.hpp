@@ -6,6 +6,7 @@
 namespace Cinpact
 {
 	std::vector<glm::vec3> Generate(
+		bool interpolate,
 		std::vector<glm::vec3> const & controlPoints, 
 		std::vector<float> const & cConstants, 
 		std::vector<float> const & kConstants,

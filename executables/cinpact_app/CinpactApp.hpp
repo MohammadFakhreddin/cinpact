@@ -81,7 +81,8 @@ private:
 	const glm::vec4 ActiveTreeCP_Color{ 1.0, 1.0, 0.0, 1.0 };
 	const glm::vec4 SelectedCP_Color{ 0.0, 1.0, 0.0, 1.0 };
 
-	float deltaU = 1e-4f;
+	bool interpolate = true;
+	float deltaU = 1e-2f;
 	float defaultK = 10.0f;
 	float defaultC = 10.0f;
 
